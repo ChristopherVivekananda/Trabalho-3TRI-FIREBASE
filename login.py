@@ -17,17 +17,14 @@ cred = credentials.Certificate(cred_path)
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 
-# --- Rotas ---
 @app.route('/')
 def index():
-    # serve o login.html que está no mesmo diretório
-    return render_template('login.html')
+    return render_template('index.html')
 
 @app.route('/adicionar-usuario', methods=['POST'])
 def adicionar_usuario():
     try:
         data = request.json or {}
-        # validações mínimas
         nome = data.get('nome', '').strip()
         email = data.get('email', '').strip()
         idade = data.get('idade')
@@ -36,7 +33,6 @@ def adicionar_usuario():
         if not nome or not email or not idade or not cidade:
             return jsonify({'success': False, 'message': 'Todos os campos são obrigatórios.'}), 400
 
-        # converter idade para int de forma segura
         try:
             idade = int(idade)
         except ValueError:
@@ -88,3 +84,4 @@ def deletar_usuario(user_id):
 if __name__ == '__main__':
     # Em dev:
     app.run(debug=True, host='127.0.0.1', port=5000)
+
