@@ -9,7 +9,7 @@ import os
 app = Flask(__name__, static_folder='.', template_folder='.')
 CORS(app, resources={r"/*": {"origins": ["http://127.0.0.1:5500", "http://localhost:5500", "http://127.0.0.1:5000"]}})
 
-cred_path = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS', 'login-fa00d-firebase-adminsdk-fbsvc-6131a6c7cd.json')
+cred_path = os.environ.get('login-fa00d-firebase-adminsdk-fbsvc-6131a6c7cd.json')
 if not os.path.exists(cred_path):
     raise RuntimeError(f"Arquivo de credenciais não encontrado: {cred_path}")
 
@@ -61,7 +61,6 @@ def listar_usuarios():
         for doc in docs:
             usuario_data = doc.to_dict() or {}
             usuario_data['id'] = doc.id
-            # converter datetime para string, se existir
             if 'data_criacao' in usuario_data and hasattr(usuario_data['data_criacao'], 'isoformat'):
                 try:
                     usuario_data['data_criacao'] = usuario_data['data_criacao'].isoformat()
@@ -82,6 +81,6 @@ def deletar_usuario(user_id):
         return jsonify({'success': False, 'message': f'Erro ao deletar usuário: {str(e)}'}), 500
 
 if __name__ == '__main__':
-    # Em dev:
     app.run(debug=True, host='127.0.0.1', port=5000)
+
 
