@@ -1,6 +1,6 @@
-// main.js (use type="module" ao importar no HTML)
+// script.js (modular, Firebase v9+)
 
-// --- 1) IMPORTS do Firebase (modular) ---
+// --- 1) IMPORTS do Firebase ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
 import {
   getFirestore,
@@ -14,7 +14,7 @@ import {
   orderBy
 } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
-// --- 2) CONFIG do Firebase (substitua pelos valores do seu projeto) ---
+// --- 2) CONFIGURAÇÃO do Firebase (substitua pelos seus dados) ---
 const FIREBASE_CONFIG = {
   apiKey: "SUA_API_KEY_AQUI",
   authDomain: "SEU_PROJETO.firebaseapp.com",
@@ -25,16 +25,14 @@ const FIREBASE_CONFIG = {
   // measurementId: "G-MEASUREID", // opcional
 };
 
-// Inicializa app e Firestore
+// Inicializa Firebase
 const app = initializeApp(FIREBASE_CONFIG);
 const db = getFirestore(app);
-
-// Coleção que vamos usar
 const usuariosCol = collection(db, "usuarios");
 
-// --- 3) FUNÇÕES DOM e lógicas (substituem as chamadas à API Python) ---
+// --- 3) FUNÇÕES --- 
 
-// Mostrar mensagens (reaproveitado)
+// Exibir mensagens
 function mostrarMensagem(texto, sucesso) {
   const msg = document.getElementById("message");
   msg.textContent = texto;
@@ -44,7 +42,17 @@ function mostrarMensagem(texto, sucesso) {
   }, 3000);
 }
 
-// Cadastrar novo usuário (usa addDoc + serverTimestamp)
+// Função para escapar HTML
+function escapeHtml(unsafe) {
+  return unsafe
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+// Cadastrar usuário
 document.getElementById("userForm").addEventListener("submit", async (e) => {
   e.preventDefault();
 
@@ -65,19 +73,16 @@ document.getElementById("userForm").addEventListener("submit", async (e) => {
   }
 
   try {
-    const docRef = await addDoc(usuariosCol, {
+    await addDoc(usuariosCol, {
       nome,
       email,
       idade,
       cidade,
-      data_criacao: serverTimestamp(), // Firestore define timestamp no servidor
+      data_criacao: serverTimestamp(),
       ativo: true
     });
-
     mostrarMensagem("Usuário cadastrado com sucesso!", true);
-    // limpa formulário (opcional)
     document.getElementById("userForm").reset();
-    // recarrega lista
     carregarUsuarios();
   } catch (err) {
     console.error(err);
@@ -88,13 +93,13 @@ document.getElementById("userForm").addEventListener("submit", async (e) => {
 // Carregar usuários
 async function carregarUsuarios() {
   document.getElementById("loading").style.display = "block";
+  const usersList = document.getElementById("usersList");
+  usersList.innerHTML = "";
+
   try {
-    // opcional: ordenar por data_criacao decrescente
     const q = query(usuariosCol, orderBy("data_criacao", "desc"));
     const snapshot = await getDocs(q);
 
-    const usersList = document.getElementById("usersList");
-    usersList.innerHTML = "";
     document.getElementById("loading").style.display = "none";
 
     if (snapshot.empty) {
@@ -106,7 +111,6 @@ async function carregarUsuarios() {
       const u = docSnap.data() || {};
       u.id = docSnap.id;
 
-      // converter timestamp do Firestore para string legível
       if (u.data_criacao && typeof u.data_criacao.toDate === "function") {
         try {
           u.data_criacao = u.data_criacao.toDate().toISOString();
@@ -130,7 +134,6 @@ async function carregarUsuarios() {
       usersList.appendChild(card);
     });
 
-    // delegação de evento para os botões excluir
     usersList.querySelectorAll(".delete-btn").forEach((btn) => {
       btn.addEventListener("click", (ev) => {
         const id = ev.currentTarget.dataset.id;
@@ -156,22 +159,5 @@ async function deletarUsuario(id) {
   }
 }
 
-// Função simples para evitar injeção de HTML ao inserir strings vindas do usuário
-function escapeHtml(unsafe) {
-  return unsafe
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
 // Carrega usuários quando a página abre
-window.addEventListener("load", () => {
-  // checa se o HTML tem os elementos esperados
-  if (!document.getElementById("userForm") || !document.getElementById("usersList")) {
-    console.warn("Elementos esperados não encontrados no DOM.");
-    return;
-  }
-  carregarUsuarios();
-});
+window.addEventListener("load", carregarUsuarios);
